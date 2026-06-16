@@ -1,0 +1,13 @@
+# Xcode / SPM build artifacts
+.build/
+DerivedData/
+*.xcuserdata
+*.xcodeproj
+xcuserdata/
+
+# macOS metadata
+.DS_Store
+
+# Xcode result bundles
+ResultBundle_*
+*.xcresult
