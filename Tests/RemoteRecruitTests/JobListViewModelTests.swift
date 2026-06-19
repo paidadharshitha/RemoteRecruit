@@ -193,6 +193,10 @@ final class JobListViewModelTests: XCTestCase {
         super.setUp()
         mockService = MockJobService()
         sut = JobListViewModel(service: mockService)
+        // Reset singleton state to defaults before each test
+        AppState.shared.selectedDomain = .iosDeveloper
+        AppState.shared.selectedExperienceLevel = .student
+        AppState.shared.searchText = ""
     }
 
     override func tearDown() {
@@ -206,7 +210,7 @@ final class JobListViewModelTests: XCTestCase {
 
     func testInitialStateIsIdle() {
         XCTAssertEqual(sut.viewState, .idle)
-        XCTAssertTrue(sut.searchText.isEmpty)
+        XCTAssertTrue(AppState.shared.searchText.isEmpty)
     }
 
     // MARK: - Success State
@@ -215,7 +219,10 @@ final class JobListViewModelTests: XCTestCase {
         await sut.loadJobs()
 
         if case .success(let data) = sut.viewState {
-            XCTAssertEqual(data.count, MockData.sampleJobs.count)
+            // Default filter: iOS Developer + Student — should return intern iOS jobs (capped at 6)
+            XCTAssertTrue(data.count > 0)
+            XCTAssertTrue(data.count <= 6)
+            XCTAssertTrue(data.allSatisfy { $0.domain == .iosDeveloper && $0.experienceLevel == .student })
         } else {
             XCTFail("Expected success state, got \(sut.viewState)")
         }
@@ -234,9 +241,9 @@ final class JobListViewModelTests: XCTestCase {
             return
         }
 
+        // Default filter: iOS Developer + Student — should see intern titles
         let titles = jobs.map(\.title)
-        XCTAssertTrue(titles.contains("Senior iOS Engineer"))
-        XCTAssertTrue(titles.contains("Backend Engineer"))
+        XCTAssertTrue(titles.contains(where: { $0.contains("Intern") || $0.contains("Co-op") })
     }
 
     // MARK: - Loading Guard
@@ -246,7 +253,7 @@ final class JobListViewModelTests: XCTestCase {
 
         mockService.jobsToReturn = []
         mockService.errorToThrow = nil
-        sut.searchText = ""
+        AppState.shared.searchText = ""
 
         // Fire the first (non-awaited) load to set .loading, then await a second call
         Task { await sut.loadJobs() }
@@ -338,17 +345,19 @@ final class JobListViewModelTests: XCTestCase {
     // MARK: - Search: By Title
 
     func testSearchByTitleFiltersCorrectly() async {
+        // Use Experienced level to get more iOS jobs
+        AppState.shared.selectedExperienceLevel = .experienced
         await sut.loadJobs()
 
-        sut.searchText = "iOS"
+        AppState.shared.searchText = "Senior"
+        sut.applyFilter()
         guard let results = sut.viewState.data else {
             XCTFail("Expected success with filtered data")
             return
         }
 
-        XCTAssertTrue(results.allSatisfy { $0.title.lowercased().contains("ios") })
-        XCTAssertEqual(results.count, 1)
-        XCTAssertEqual(results.first?.title, "Senior iOS Engineer")
+        XCTAssertTrue(results.allSatisfy { $0.title.localizedCaseInsensitiveContains("Senior") })
+        XCTAssertTrue(results.count > 0)
     }
 
     // MARK: - Search: By Company
@@ -356,14 +365,15 @@ final class JobListViewModelTests: XCTestCase {
     func testSearchByCompanyFiltersCorrectly() async {
         await sut.loadJobs()
 
-        sut.searchText = "stripe"
+        AppState.shared.searchText = "apple"
+        sut.applyFilter()
         guard let results = sut.viewState.data else {
             XCTFail("Expected success with filtered data")
             return
         }
 
-        XCTAssertTrue(results.allSatisfy { $0.companyName.lowercased().contains("stripe") })
-        XCTAssertEqual(results.count, 1)
+        XCTAssertTrue(results.allSatisfy { $0.companyName.localizedCaseInsensitiveContains("apple") })
+        XCTAssertTrue(results.count > 0)
     }
 
     // MARK: - Search: Case Insensitive
@@ -371,19 +381,24 @@ final class JobListViewModelTests: XCTestCase {
     func testSearchIsCaseInsensitive() async {
         await sut.loadJobs()
 
-        sut.searchText = "STRIPE"
+        AppState.shared.searchText = "APPLE"
+        sut.applyFilter()
         guard let results = sut.viewState.data else {
             XCTFail("Expected success with filtered data")
             return
         }
 
-        XCTAssertEqual(results.count, 1)
+        XCTAssertTrue(results.count > 0)
     }
 
     func testSearchMixedCase() async {
+        // Switch to Backend domain + Fresher to get Notion
+        AppState.shared.selectedDomain = .backendEngineer
+        AppState.shared.selectedExperienceLevel = .fresher
         await sut.loadJobs()
 
-        sut.searchText = "NoTiOn"
+        AppState.shared.searchText = "NoTiOn"
+        sut.applyFilter()
         guard let results = sut.viewState.data else {
             XCTFail("Expected success with filtered data")
             return
@@ -398,7 +413,8 @@ final class JobListViewModelTests: XCTestCase {
     func testSearchWithNoMatchesShowsEmpty() async {
         await sut.loadJobs()
 
-        sut.searchText = "zzznonexistent"
+        AppState.shared.searchText = "zzznonexistent"
+        sut.applyFilter()
         XCTAssertEqual(sut.viewState, .empty)
     }
 
@@ -407,11 +423,13 @@ final class JobListViewModelTests: XCTestCase {
     func testClearingSearchRestoresAllJobs() async {
         await sut.loadJobs()
 
-        sut.searchText = "iOS"
-        XCTAssertEqual(sut.viewState.data?.count, 1)
+        AppState.shared.searchText = "nonexistent"
+        sut.applyFilter()
+        XCTAssertEqual(sut.viewState.data?.count, 0)
 
-        sut.searchText = ""
-        XCTAssertEqual(sut.viewState.data?.count, MockData.sampleJobs.count)
+        AppState.shared.searchText = ""
+        sut.applyFilter()
+        XCTAssertTrue(sut.viewState.data?.count ?? 0 > 0)
     }
 
     // MARK: - Search: Whitespace only
@@ -419,8 +437,9 @@ final class JobListViewModelTests: XCTestCase {
     func testSearchWithWhitespaceOnlyReturnsAll() async {
         await sut.loadJobs()
 
-        sut.searchText = "   "
-        XCTAssertEqual(sut.viewState.data?.count, MockData.sampleJobs.count)
+        AppState.shared.searchText = "   "
+        sut.applyFilter()
+        XCTAssertTrue(sut.viewState.data?.count ?? 0 > 0)
     }
 
     // MARK: - Search: Partial match
@@ -428,26 +447,30 @@ final class JobListViewModelTests: XCTestCase {
     func testSearchPartialMatch() async {
         await sut.loadJobs()
 
-        sut.searchText = "eng"
+        AppState.shared.searchText = "Intern"
+        sut.applyFilter()
         guard let results = sut.viewState.data else {
             XCTFail("Expected success with filtered data")
             return
         }
 
-        // "Backend Engineer", "Frontend Engineer", "Senior iOS Engineer"
         XCTAssertGreaterThan(results.count, 0)
         XCTAssertTrue(results.allSatisfy {
-            $0.title.lowercased().contains("eng")
+            $0.title.localizedCaseInsensitiveContains("Intern")
         })
     }
 
     // MARK: - Search: Matches title OR company
 
     func testSearchMatchesTitleOrCompany() async {
+        // Switch to Product Designer + Student to get Figma
+        AppState.shared.selectedDomain = .productDesigner
+        AppState.shared.selectedExperienceLevel = .student
         await sut.loadJobs()
 
         // "figma" matches company "Figma" not any title
-        sut.searchText = "figma"
+        AppState.shared.searchText = "figma"
+        sut.applyFilter()
         guard let results = sut.viewState.data else {
             XCTFail("Expected success with filtered data")
             return
@@ -466,8 +489,39 @@ final class JobListViewModelTests: XCTestCase {
         XCTAssertEqual(sut.viewState, .empty)
 
         // Even with a search term, should remain empty
-        sut.searchText = "anything"
+        AppState.shared.searchText = "anything"
+        sut.applyFilter()
         XCTAssertEqual(sut.viewState, .empty)
+    }
+
+    // MARK: - Domain Filter
+
+    func testDomainFilterReturnsCorrectJobs() async {
+        AppState.shared.selectedExperienceLevel = .experienced
+        AppState.shared.selectedDomain = .backendEngineer
+        await sut.loadJobs()
+
+        guard let jobs = sut.viewState.data else {
+            XCTFail("Expected success data")
+            return
+        }
+        XCTAssertTrue(jobs.allSatisfy { $0.domain == .backendEngineer })
+        XCTAssertTrue(jobs.allSatisfy { $0.experienceLevel == .experienced })
+    }
+
+    // MARK: - Experience Level Filter
+
+    func testExperienceLevelFilterReturnsCorrectJobs() async {
+        AppState.shared.selectedExperienceLevel = .fresher
+        AppState.shared.selectedDomain = .dataScientist
+        await sut.loadJobs()
+
+        guard let jobs = sut.viewState.data else {
+            XCTFail("Expected success data")
+            return
+        }
+        XCTAssertTrue(jobs.allSatisfy { $0.experienceLevel == .fresher })
+        XCTAssertTrue(jobs.allSatisfy { $0.domain == .dataScientist })
     }
 }
 

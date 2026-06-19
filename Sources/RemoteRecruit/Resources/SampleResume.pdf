@@ -1,0 +1,71 @@
+%PDF-1.0
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>
+endobj
+4 0 obj
+<< /Length 443 >>
+stream
+BT
+/F1 24 Tf
+100 700 Td
+(Jane Doe) Tj
+0 -30 Td
+/F1 11 Tf
+(iOS Developer) Tj
+0 -20 Td
+(jane.doe@example.com  |  +1 555-123-4567) Tj
+0 -30 Td
+/F1 14 Tf
+(EXPERIENCE) Tj
+0 -20 Td
+/F1 11 Tf
+(Senior iOS Developer, Acme Corp 2022-Present) Tj
+0 -16 Td
+(Developed production SwiftUI applications with MVVM architecture.) Tj
+0 -16 Td
+(Built features using Swift concurrency, Combine, and Core Data.) Tj
+0 -24 Td
+/F1 14 Tf
+(SKILLS) Tj
+0 -20 Td
+/F1 11 Tf
+(Swift, SwiftUI, UIKit, Combine, Core Data, Firebase, REST APIs,) Tj
+0 -16 Td
+(Git, CI/CD, Xcode, XCTest, Swift Concurrency) Tj
+0 -24 Td
+/F1 14 Tf
+(EDUCATION) Tj
+0 -20 Td
+/F1 11 Tf
+(B.S. Computer Science, State University, 2020) Tj
+0 -24 Td
+/F1 14 Tf
+(PORTFOLIO) Tj
+0 -20 Td
+/F1 11 Tf
+(https://janedoe.dev) Tj
+ET
+endstream
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000266 00000 n 
+0000000769 00000 n 
+trailer
+<< /Size 6 /Root 1 0 R >>
+startxref
+820
+%%EOF

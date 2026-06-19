@@ -6,7 +6,7 @@ import Foundation
 // MARK: - View State
 
 /// Explicit state machine for view rendering — eliminates ambiguous optional-based states.
-enum ViewState<T: Equatable>: Equatable {
+public enum ViewState<T: Equatable>: Equatable {
     case idle
     case loading
     case success(data: T)
@@ -30,7 +30,7 @@ enum ViewState<T: Equatable>: Equatable {
 
     // MARK: Equatable
 
-    static func == (lhs: ViewState, rhs: ViewState) -> Bool {
+    public static func == (lhs: ViewState, rhs: ViewState) -> Bool {
         switch (lhs, rhs) {
         case (.idle, .idle), (.loading, .loading), (.empty, .empty):
             return true
@@ -47,14 +47,14 @@ enum ViewState<T: Equatable>: Equatable {
 // MARK: - Service Error
 
 /// Domain-specific errors for the service layer.
-enum JobServiceError: LocalizedError, Equatable, Sendable {
+public enum JobServiceError: LocalizedError, Equatable, Sendable {
     case networkUnavailable
     case serverError(statusCode: Int)
     case decodingError
     case unauthorized
     case custom(message: String)
 
-    var errorDescription: String? {
+    public var errorDescription: String? {
         switch self {
         case .networkUnavailable:
             return "Network is unavailable. Please check your connection."
@@ -72,14 +72,14 @@ enum JobServiceError: LocalizedError, Equatable, Sendable {
 
 // MARK: - Protocol
 
-protocol JobServiceProtocol: Sendable {
-    func fetchJobs() async throws -> [Job]
-    func fetchJob(by id: UUID) async throws -> Job
+public protocol JobServiceProtocol: Sendable {
+    func fetchJobs(for domain: String?) async throws -> [Job]
+    func fetchJob(by id: String) async throws -> Job
 }
 
 // MARK: - URLSession Abstraction
 
-protocol URLSessionProtocol: Sendable {
+public protocol URLSessionProtocol: Sendable {
     func data(for request: URLRequest) async throws -> (Data, URLResponse)
 }
 
@@ -87,7 +87,7 @@ extension URLSession: URLSessionProtocol {}
 
 // MARK: - Remote Implementation
 
-final class RemoteJobService: JobServiceProtocol {
+public final class RemoteJobService: JobServiceProtocol {
 
     private let baseURL: URL
     private let session: URLSessionProtocol
@@ -100,8 +100,12 @@ final class RemoteJobService: JobServiceProtocol {
         self.session = session
     }
 
-    func fetchJobs() async throws -> [Job] {
-        let request = buildRequest(path: "/jobs")
+    public func fetchJobs(for domain: String? = nil) async throws -> [Job] {
+        var path = "/jobs"
+        if let domain, !domain.isEmpty {
+            path += "?domain=\(domain.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? domain)"
+        }
+        let request = buildRequest(path: path)
         let (data, response) = try await session.data(for: request)
         try validateHTTPResponse(response)
 
@@ -114,8 +118,8 @@ final class RemoteJobService: JobServiceProtocol {
         }
     }
 
-    func fetchJob(by id: UUID) async throws -> Job {
-        let request = buildRequest(path: "/jobs/\(id.uuidString.lowercased())")
+    public func fetchJob(by id: String) async throws -> Job {
+        let request = buildRequest(path: "/jobs/\(id)")
         let (data, response) = try await session.data(for: request)
         try validateHTTPResponse(response)
 

@@ -5,52 +5,53 @@ import SwiftUI
 
 // MARK: - Empty State View
 
-struct EmptyStateView: View {
+public struct EmptyStateView: View {
 
-    let systemImage: String
-    let title: String
-    let message: String
+    public let systemImage: String
+    public let title: String
+    public let message: String
 
-    var body: some View {
-        VStack(spacing: 16) {
+    public var body: some View {
+        VStack(spacing: DesignTokens.Spacing.xxl) {
             Image(systemName: systemImage)
                 .font(.system(size: 56, weight: .light))
                 .foregroundStyle(.secondary)
 
-            VStack(spacing: 6) {
+            VStack(spacing: DesignTokens.Spacing.sm) {
                 Text(title)
-                    .font(.title3.bold())
+                    .font(DesignTokens.Typography.title)
 
                 Text(message)
-                    .font(.subheadline)
+                    .font(DesignTokens.Typography.subheadline)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
             }
         }
-        .padding(.horizontal, 40)
+        .padding(.horizontal, DesignTokens.Spacing.xxxl)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .animatedAppearance()
     }
 }
 
 // MARK: - Error State View
 
-struct ErrorStateView: View {
+public struct ErrorStateView: View {
 
-    let message: String
-    let retryAction: () -> Void
+    public let message: String
+    public let retryAction: () -> Void
 
-    var body: some View {
-        VStack(spacing: 20) {
+    public var body: some View {
+        VStack(spacing: DesignTokens.Spacing.xxl) {
             Image(systemName: "exclamationmark.triangle")
                 .font(.system(size: 56, weight: .light))
-                .foregroundStyle(.orange)
+                .foregroundStyle(DesignTokens.Colors.warning)
 
-            VStack(spacing: 6) {
+            VStack(spacing: DesignTokens.Spacing.sm) {
                 Text("Something went wrong")
-                    .font(.title3.bold())
+                    .font(DesignTokens.Typography.title)
 
                 Text(message)
-                    .font(.subheadline)
+                    .font(DesignTokens.Typography.subheadline)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
             }
@@ -59,33 +60,35 @@ struct ErrorStateView: View {
                 retryAction()
             } label: {
                 Label("Try Again", systemImage: "arrow.clockwise")
-                    .font(.subheadline.weight(.semibold))
-                    .padding(.horizontal, 20)
-                    .padding(.vertical, 10)
-                    .background(.tint, in: Capsule())
+                    .font(DesignTokens.Typography.captionSemibold)
+                    .padding(.horizontal, DesignTokens.Spacing.xl)
+                    .padding(.vertical, DesignTokens.Spacing.sm)
+                    .background(DesignTokens.Colors.accent, in: Capsule())
                     .foregroundStyle(.white)
             }
             .buttonStyle(.plain)
         }
-        .padding(.horizontal, 40)
+        .padding(.horizontal, DesignTokens.Spacing.xxxl)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .animatedAppearance()
     }
 }
 
 // MARK: - Loading State View
 
-struct LoadingStateView: View {
+public struct LoadingStateView: View {
 
-    let message: String
+    public let message: String
 
-    var body: some View {
-        VStack(spacing: 16) {
+    public var body: some View {
+        VStack(spacing: DesignTokens.Spacing.xxl) {
             ProgressView()
                 .controlSize(.large)
             Text(message)
-                .font(.subheadline)
+                .font(DesignTokens.Typography.subheadline)
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .animatedAppearance()
     }
 }

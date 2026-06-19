@@ -3,15 +3,16 @@
 
 import SwiftUI
 
-struct JobListView: View {
+public struct JobListView: View {
 
     @StateObject private var viewModel: JobListViewModel
+    @StateObject private var appState = AppState.shared
 
-    init(viewModel: JobListViewModel) {
+    public init(viewModel: JobListViewModel) {
         _viewModel = StateObject(wrappedValue: viewModel)
     }
 
-    var body: some View {
+    public var body: some View {
         NavigationStack {
             Group {
                 switch viewModel.viewState {
@@ -27,11 +28,17 @@ struct JobListView: View {
 
                 case .empty:
                     EmptyStateView(
-                        systemImage: viewModel.searchText.isEmpty ? "briefcase" : "magnifyingglass",
-                        title: viewModel.searchText.isEmpty ? "No jobs available" : "No results",
-                        message: viewModel.searchText.isEmpty
-                            ? "There are no remote job listings right now. Check back soon!"
-                            : "No jobs match \"\(viewModel.searchText)\". Try a different search."
+                        systemImage: appState.searchText.isEmpty
+                            ? (viewModel.preferredRoles.isEmpty ? "briefcase" : "slider.horizontal.3")
+                            : "magnifyingglass",
+                        title: appState.searchText.isEmpty
+                            ? (viewModel.preferredRoles.isEmpty ? "No jobs found for this category" : "No matching jobs")
+                            : "No results",
+                        message: appState.searchText.isEmpty
+                            ? (viewModel.preferredRoles.isEmpty
+                                ? "No jobs match \(viewModel.selectedDiscipline.shortName) · \(viewModel.selectedLevel.rawValue). Try a different filter."
+                                : "No jobs match your selected preferences. Try updating your profile roles.")
+                            : "No jobs match \"\(appState.searchText)\". Try a different search."
                     )
 
                 case .error(let message):
@@ -40,9 +47,39 @@ struct JobListView: View {
                     }
                 }
             }
-            .animation(.easeInOut(duration: 0.25), value: viewModel.viewState.isLoading)
+            .onChange(of: viewModel.selectedDiscipline) {
+                appState.selectedDiscipline = viewModel.selectedDiscipline
+                viewModel.applyFilter()
+            }
+            .onChange(of: viewModel.selectedLevel) {
+                appState.selectedExperienceLevel = viewModel.selectedLevel
+                viewModel.applyFilter()
+            }
+            .onChange(of: appState.searchText) {
+                viewModel.applyFilter()
+ }
+            .onChange(of: appState.preferredRoles) {
+                viewModel.applyFilter()
+ }
+            .onChange(of: appState.academicBranch) {
+                viewModel.applyFilter()
+ }
+            .animation(DesignTokens.Animations.fade, value: viewModel.viewState.isLoading)
+            .animation(DesignTokens.Animations.spring, value: viewModel.selectedDiscipline)
+            .animation(DesignTokens.Animations.spring, value: viewModel.selectedLevel)
             .navigationTitle("RemoteRecruit")
-            .searchable(text: $viewModel.searchText, prompt: "Search jobs by title or company…")
+            .searchable(text: $appState.searchText, prompt: "Search jobs by title, company, or tags…")
+            .toolbar {
+                ToolbarItem(placement: .automatic) {
+                    Menu {
+                        disciplinePickerMenu
+                        Divider()
+                        levelPickerMenu
+                    } label: {
+                        Image(systemName: "line.3.horizontal.decrease.circle")
+                    }
+                }
+            }
             .task {
                 if case .idle = viewModel.viewState {
                     await viewModel.loadJobs()
@@ -54,17 +91,104 @@ struct JobListView: View {
         }
     }
 
+    // MARK: - Picker Menus
+
+    private var disciplinePickerMenu: some View {
+        Section {
+            Picker("Discipline", selection: $viewModel.selectedDiscipline) {
+                ForEach(AcademicDiscipline.allCases) { discipline in
+                    Label(discipline.rawValue, systemImage: discipline.iconName)
+                        .tag(discipline)
+                }
+            }
+        }
+    }
+
+    private var levelPickerMenu: some View {
+        Section {
+            Picker("Experience Level", selection: $viewModel.selectedLevel) {
+                ForEach(ExperienceLevel.allCases) { level in
+                    Text(level.rawValue).tag(level)
+                }
+            }
+        }
+    }
+
     // MARK: - Subviews
 
     private func jobList(jobs: [Job]) -> some View {
         List {
+            // Filter Banner
+            Section {
+                HStack(spacing: 8) {
+                    Image(systemName: "line.3.horizontal.filter")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Text("\(viewModel.activeDomainName)")
+                        .font(.caption.weight(.medium))
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 5)
+                        .background(.tint.opacity(0.1), in: Capsule())
+                    Text("\(jobs.count) jobs")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                }
+                .listRowBackground(Color.clear)
+                .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 0, trailing: 16))
+            }
+
+            // Preferences Summary Banner
+            if !viewModel.preferredRoles.isEmpty {
+                Section {
+                    HStack(spacing: 8) {
+                        Image(systemName: "star.circle.fill")
+                            .font(.caption)
+                            .foregroundStyle(Color.accentColor)
+                        Text("Showing roles:")
+                            .font(.caption.weight(.medium))
+                            .foregroundStyle(.secondary)
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 6) {
+                                ForEach(viewModel.preferredRoles.sorted { $0.rawValue < $1.rawValue }) { role in
+                                    Text(role.rawValue)
+                                        .font(.caption2.weight(.semibold))
+                                        .padding(.horizontal, 8)
+                                        .padding(.vertical, 4)
+                                        .background(Color.accentColor.opacity(0.12), in: Capsule())
+                                        .foregroundStyle(Color.accentColor)
+                                }
+                            }
+                        }
+                        Spacer()
+                    }
+                    .listRowBackground(Color.clear)
+                    .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
+                }
+            }
+
+            Section {
             ForEach(jobs) { job in
-                NavigationLink(value: job) {
-                    JobRowView(job: job)
+                    NavigationLink(value: job) {
+                        JobRowView(job: job)
+                    }
+                    .buttonStyle(.plain)
+                    .listRowInsets(EdgeInsets(top: DesignTokens.Spacing.xs, leading: DesignTokens.Spacing.lg, bottom: DesignTokens.Spacing.xs, trailing: DesignTokens.Spacing.lg))
+                    .listRowSeparator(.hidden)
+                    .listRowBackground(
+                        RoundedRectangle(cornerRadius: DesignTokens.CornerRadius.lg)
+                            .fill(DesignTokens.Colors.surface)
+                            .padding(.horizontal, DesignTokens.Spacing.sm)
+                    )
                 }
             }
         }
+        .id(viewModel.selectedDiscipline.rawValue
+             + viewModel.selectedLevel.rawValue
+             + appState.searchText)
+#if os(iOS)
         .listStyle(.insetGrouped)
+#endif
         .navigationDestination(for: Job.self) { job in
             JobDetailView(job: job)
         }
@@ -73,11 +197,11 @@ struct JobListView: View {
 
 // MARK: - Job Row View
 
-struct JobRowView: View {
+public struct JobRowView: View {
 
-    let job: Job
+    public let job: Job
 
-    var body: some View {
+    public var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(job.title)
                 .font(.headline)

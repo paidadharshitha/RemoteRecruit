@@ -1,0 +1,79 @@
+name: RemoteRecruitApp
+options:
+  bundleIdPrefix: com.remoterecruit
+  deploymentTarget:
+    iOS: "17.0"
+  xcodeVersion: "16.0"
+
+settings:
+  base:
+    PRODUCT_NAME: RemoteRecruitApp
+
+targets:
+  RemoteRecruitApp:
+    type: application
+    platform: iOS
+    sources:
+      - path: RemoteRecruitApp
+    dependencies:
+      - package: RemoteRecruit
+      - package: Firebase
+        product: FirebaseAuth
+      - package: Firebase
+        product: FirebaseFirestore
+      - package: Firebase
+        product: FirebaseCore
+      - package: Firebase
+        product: FirebaseStorage
+    settings:
+      base:
+        INFOPLIST_GENERATION_METHOD: GeneratedFile
+        TARGETED_DEVICE_FAMILY: "1,2"
+        SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD: NO
+        CODE_SIGN_IDENTITY: "-"
+        CODE_SIGNING_REQUIRED: NO
+        GEMINI_API_KEY: YOUR_GEMINI_API_KEY_HERE
+    info:
+      path: RemoteRecruitApp/Info.plist
+      properties:
+        CFBundleDevelopmentRegion: en
+        CFBundleDisplayName: RemoteRecruit
+        CFBundleExecutable: "$(EXECUTABLE_NAME)"
+        CFBundleIdentifier: "$(PRODUCT_BUNDLE_IDENTIFIER)"
+        CFBundleInfoDictionaryVersion: "6.0"
+        CFBundleName: "$(PRODUCT_NAME)"
+        CFBundlePackageType: "$(PRODUCT_BUNDLE_PACKAGE_TYPE)"
+        CFBundleShortVersionString: "1.0"
+        CFBundleVersion: "1"
+        UILaunchScreen:
+          UIColorName: ""
+          UIImageName: ""
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+
+  RemoteRecruitTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: Tests
+    dependencies:
+      - package: RemoteRecruit
+    settings:
+      base:
+        CODE_SIGN_IDENTITY: "-"
+        CODE_SIGNING_REQUIRED: NO
+        GENERATE_INFOPLIST_FILE: YES
+
+packages:
+  RemoteRecruit:
+    path: .
+  Firebase:
+    url: https://github.com/firebase/firebase-ios-sdk.git
+    from: "11.0.0"
+    products:
+      - FirebaseAuth
+      - FirebaseFirestore
+      - FirebaseStorage
+      - FirebaseCore
