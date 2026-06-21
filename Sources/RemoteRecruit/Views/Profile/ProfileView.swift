@@ -519,7 +519,8 @@ public enum DashboardSection: String, Hashable, Identifiable, CaseIterable {
 
 // MARK: - Flow Layout
 
-/// A simple flow/wrapping layout that arranges views left-to-right, top-to-bottom.
+/// A robust flow/wrapping layout that arranges views left-to-right, top-to-bottom.
+/// Uses the SwiftUI `Layout` protocol for correct measurement and placement.
 struct FlowLayout: Layout {
 
     var spacing: CGFloat = 8
@@ -547,7 +548,15 @@ struct FlowLayout: Layout {
 
     private func arrange(proposal: ProposedViewSize, subviews: Subviews) -> ArrangementResult {
         var result = ArrangementResult()
-        let maxWidth = proposal.width ?? .infinity
+
+        // When inside a ScrollView, the proposal width may be .infinity.
+        // Fall back to the screen width so row breaks are calculated correctly.
+        let maxWidth: CGFloat
+        if let proposedWidth = proposal.width, proposedWidth.isFinite {
+            maxWidth = proposedWidth
+        } else {
+            maxWidth = 1024 // Fallback for non-iOS platforms
+        }
 
         var x: CGFloat = 0
         var y: CGFloat = 0
@@ -558,6 +567,7 @@ struct FlowLayout: Layout {
             result.sizes.append(size)
 
             if x + size.width > maxWidth, x > 0 {
+                // Move to next row
                 x = 0
                 y += rowHeight + spacing
                 rowHeight = 0
@@ -568,7 +578,9 @@ struct FlowLayout: Layout {
             x += size.width + spacing
         }
 
-        result.size = CGSize(width: min(x - spacing, maxWidth), height: y + rowHeight)
+        // Final size: width is the longest row, height is total
+        let contentWidth = x > spacing ? x - spacing : 0
+        result.size = CGSize(width: max(contentWidth, 0), height: y + rowHeight)
         return result
     }
 }
