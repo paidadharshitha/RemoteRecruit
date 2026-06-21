@@ -2,6 +2,10 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>CLIENT_ID</key>
+	<string>1019877423250-npehoo46a443p2tmr71du60qb042gn10.apps.googleusercontent.com</string>
+	<key>REVERSED_CLIENT_ID</key>
+	<string>com.googleusercontent.apps.1019877423250-npehoo46a443p2tmr71du60qb042gn10</string>
 	<key>API_KEY</key>
 	<string>AIzaSyB4e9tpSnj2JCNKolPNZNPb1VRcnGj350I</string>
 	<key>GCM_SENDER_ID</key>
@@ -9,7 +13,7 @@
 	<key>PLIST_VERSION</key>
 	<string>1</string>
 	<key>BUNDLE_ID</key>
-	<string>RemoteRecruit</string>
+	<string>com.paidadharshitha.remoterecruit</string>
 	<key>PROJECT_ID</key>
 	<string>remoterecruit-e58fc</string>
 	<key>STORAGE_BUCKET</key>
@@ -25,6 +29,6 @@
 	<key>IS_SIGNIN_ENABLED</key>
 	<true></true>
 	<key>GOOGLE_APP_ID</key>
-	<string>1:1019877423250:ios:4eead78386035676694e4b</string>
+	<string>1:1019877423250:ios:2e1a96023f66d7a6694e4b</string>
 </dict>
 </plist>
